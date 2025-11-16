@@ -1,32 +1,28 @@
 #
 # Fixed APISIX configuration
 #
-
-node:
-  listen: 0.0.0.0:9080
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: yaml
 
 apisix:
+  node_listen: 9080
   enable_admin: true
-  admin_api_version: v1
-  allow_admin_access_domains:
-    - "127.0.0.1"
-    - "localhost"
-    - "apisix"
-  http:
-    enable_ipv6: false
+  admin_key:
+    - name: admin
+      key: your-admin-key-here
+      role: admin
 
 plugins:
-  - name: proxy-rewrite
-  - name: cors
-  - name: request-id
-
-upstreams: []
+  - proxy-rewrite
+  - cors
+  - request-id
 
 routes:
   - id: 1
     name: "Health Test"
-    uris:
-      - "/health"
+    uri: /health
     priority: 50
     upstream:
       type: roundrobin
@@ -36,8 +32,7 @@ routes:
 
   - id: 20
     name: "Keycloak Admin Console"
-    uris:
-      - "/auth/*"
+    uri: /auth/*
     priority: 200
     upstream:
       type: roundrobin
@@ -45,20 +40,20 @@ routes:
         "keycloak-438091062981.us-central1.run.app:443": 1
       scheme: https
     plugins:
-      - name: cors
+      cors:
         allow_origins: "*"
         allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
         allow_headers: "Content-Type,Authorization,X-API-Key"
         expose_headers: "X-Request-ID"
         max_age: 86400
-      - name: request-id
+      request-id:
         header_name: "X-Request-ID"
-        include_resp_header: true
-      - name: proxy-rewrite
+        include_in_response: true
+      proxy-rewrite:
         scheme: https
         host: keycloak-438091062981.us-central1.run.app
         regex_uri:
           - "^/auth/(.*)"
           - "/admin/master/console/$1"
 
-# End of file
+#END
