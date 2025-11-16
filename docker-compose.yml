@@ -22,21 +22,6 @@ services:
       timeout: 5s
       retries: 5
 
-  apisix-dashboard:
-    image: apache/apisix-dashboard:3.7.0-latest
-    container_name: gateway-apisix-dashboard
-    restart: always
-    ports:
-      - "9000:9000"      # Dashboard UI
-      - "19000:9000"     # External Dashboard
-    environment:
-      APISIX_API_BASE_URL: "http://apisix:9080"
-      APISIX_API_KEY: "edd1c9f034335f136f87ad84b625c8f1"
-    depends_on:
-      - apisix
-    networks:
-      - apisix-net
-
 networks:
   apisix-net:
     driver: bridge
