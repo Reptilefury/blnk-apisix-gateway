@@ -81,7 +81,6 @@ routes:
   - id: 20
     name: "Keycloak Admin Console"
     uris:
-      - "/auth"
       - "/auth/*"
     priority: 200
     upstream:
@@ -102,6 +101,8 @@ routes:
       proxy-rewrite:
         scheme: https
         host: keycloak-438091062981.us-central1.run.app
-        uri: "/admin/master/console"
+        regex_uri:
+          - "^/auth/(.*)"
+          - "/admin/master/console/$1"
 
-# Ensure there is a newline at the very end of this file
+# Add any other routes, services, plugins, or upstreams below
