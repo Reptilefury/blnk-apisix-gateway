@@ -8,16 +8,7 @@ deployment:
 
 apisix:
   node_listen: 9080
-  enable_admin: true
-  admin_key:
-    - name: admin
-      key: your-admin-key-here
-      role: admin
-
-plugins:
-  - proxy-rewrite
-  - cors
-  - request-id
+  enable_admin: false  # Disable admin API in standalone mode
 
 routes:
   - id: 1
