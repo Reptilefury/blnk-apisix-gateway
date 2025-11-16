@@ -25,11 +25,11 @@ routes:
       scheme: http
 
   - id: 20
-    name: "Keycloak Admin Console"
+    name: "Keycloak Proxy"
     uris:
-      - /auth
-      - /auth/*
-    priority: 200
+      - /
+      - /*
+    priority: 100
     upstream:
       type: roundrobin
       nodes:
@@ -41,15 +41,18 @@ routes:
       cors:
         allow_origins: "*"
         allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-        allow_headers: "Content-Type,Authorization,X-API-Key"
+        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With"
         expose_headers: "X-Request-ID"
+        allow_credentials: true
         max_age: 86400
       request-id:
         header_name: "X-Request-ID"
         include_in_response: true
       proxy-rewrite:
-        regex_uri:
-          - "^/auth/?(.*)$"
-          - "/admin/master/console/$1"
+        headers:
+          set:
+            X-Forwarded-Proto: "https"
+            X-Forwarded-Host: "136.111.45.49:19080"
+            X-Forwarded-Port: "19080"
 
 #END
