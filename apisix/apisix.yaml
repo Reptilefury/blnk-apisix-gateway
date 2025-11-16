@@ -32,7 +32,7 @@ routes:
     uris:
       - /health
       - /test/health
-    priority: 50
+    priority: 100
     upstream:
       type: roundrobin
       nodes:
@@ -40,11 +40,9 @@ routes:
       scheme: http
 
   - id: 20
-    name: "Keycloak Proxy"
-    uris:
-      - /auth/*
-      - /realms/*
-    priority: 200
+    name: "Keycloak Full Proxy"
+    uri: /*
+    priority: 1
     upstream:
       type: roundrobin
       nodes:
@@ -65,11 +63,9 @@ routes:
         include_in_response: true
       proxy-rewrite:
         headers:
-          add:
-            X-Forwarded-For: "$remote_addr"
+          set:
             X-Forwarded-Proto: "https"
             X-Forwarded-Host: "136.111.45.49"
-            X-Forwarded-Port: "19443"
-            X-Real-IP: "$remote_addr"
+            X-Forwarded-Port: "443"
 
 #END
