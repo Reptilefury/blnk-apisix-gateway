@@ -1,10 +1,3 @@
-#
-# Licensed to the Apache Software Foundation (ASF)
-#
-
-# Config in this file will be merged into config from config.yaml, conf/apisix.yaml
-# using the yq merge-arrays feature. So it can override default config.yaml config.
-
 node:
   listen: 0.0.0.0:9080
 
@@ -15,74 +8,31 @@ apisix:
     - "127.0.0.1"
     - "localhost"
     - "apisix"
-  admin_api_mtls:
-    admin_ssl_cert: ""
-    admin_ssl_key: ""
-    admin_ssl_ca_cert: ""
   http:
     enable_ipv6: false
 
 plugins:
-  - api-breaker
-  - authz-casbin
-  - authz-keycloak
-  - aws-lambda
-  - azure-functions
-  - batch-requests
-  - cors
-  - echo
-  - fault-injection
-  - grpc-transcode
-  - gzip
-  - hmac-auth
-  - http-logger
-  - ip-restriction
-  - jwt-auth
-  - kafka-logger
-  - key-auth
-  - limit-conn
-  - limit-req
-  - node-red
-  - oauth2
-  - openid-connect
-  - prometheus
-  - proxy-cache
-  - proxy-mirror
   - proxy-rewrite
-  - real-ip
-  - redirect
-  - referer-restriction
+  - cors
   - request-id
-  - request-validation
-  - response-rewrite
-  - serverless-post-function
-  - serverless-pre-function
-  - session
-  - skywalking
-  - slp
-  - splunk-hec-logging
-  - standby
-  - tcp-logger
-  - traffic-split
-  - ua-restriction
-  - uri-blocker
-  - wolf-rbac
-  - zipkin
-  - server-info
-  - client-control
-  - consumer-restriction
-  - ext-plugin-pre-req
-  - ext-plugin-post-req
-  - inspect
 
 upstreams: []
 
 routes:
-  # Keycloak Admin Console
+  - id: 1
+    name: "Health Test"
+    uris:
+      - "/health"
+    priority: 50
+    upstream:
+      type: roundrobin
+      nodes:
+        "httpbin.org:80": 1
+      scheme: http
+
   - id: 20
     name: "Keycloak Admin Console"
     uris:
-      - "/auth"
       - "/auth/*"
     priority: 200
     upstream:
@@ -104,22 +54,7 @@ routes:
         scheme: https
         host: keycloak-438091062981.us-central1.run.app
         regex_uri:
-          - "^/auth$"
-          - "/admin/master/console"
           - "^/auth/(.*)"
           - "/admin/master/console/$1"
 
-  # Test endpoint to verify routing
-  - id: 99
-    name: "Health Test Upstream"
-    uris:
-      - "/test/health"
-    priority: 100
-    upstream:
-      type: roundrobin
-      nodes:
-        "httpbin.org:80": 1
-      scheme: http
-    plugins:
-      proxy-rewrite:
-        uri: "/get"
+#END
