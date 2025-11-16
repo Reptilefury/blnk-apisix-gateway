@@ -73,8 +73,10 @@ jobs:
       - name: Notify deployment status
         if: always()
         run: |
-          if [ "${{ job.status }}" == "success" ]; then
+          echo "=== Deployment Status ==="
+          if [[ "${{ job.status }}" == "success" ]]; then
             echo "✓ Deployment succeeded"
           else
             echo "✗ Deployment failed"
             exit 1
+          fi
