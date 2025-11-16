@@ -13,10 +13,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Deploy to gateway VM
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -27,54 +27,67 @@ jobs:
             echo "=== APISIX Deployment ==="
             echo "Timestamp: $(date)"
 
-            mkdir -p ~/deploy-apisix
-            cd ~/deploy-apisix
+            # Navigate to deployment directory
+            cd ~/apisix-blnk
 
-            if [ ! -d .git ]; then
+            # Ensure local repo is initialized
+            if [ ! -d ".git" ]; then
               git init
-              git remote add origin https://github.com/${{ github.repository }}.git
+              git remote add origin https://github.com/Reptilefury/blnk-apisix-gateway.git
             fi
-            git fetch origin main
+
+            # Pull latest changes
+            git fetch --all
             git reset --hard origin/main
 
-            sudo chown -R $USER:$USER .
-
-            SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
-            if [ -z "$SERVICE_NAME" ]; then
-              echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
+            # Verify configuration file exists
+            if [ ! -f apisix/apisix.yaml ]; then
+              echo "ERROR: apisix/apisix.yaml not found!"
               exit 1
             fi
-            echo "Detected APISIX service: $SERVICE_NAME"
+            echo "Configuration file verified."
 
-            if docker ps -a --format '{{.Names}}' | grep -q "^gateway-apisix\$"; then
-              echo "Removing existing container gateway-apisix"
+            # Stop any existing container with conflicting name
+            if docker ps -a --format '{{.Names}}' | grep -Eq "^gateway-apisix\$"; then
+              echo "Stopping existing container..."
               docker rm -f gateway-apisix
             fi
 
-            echo "Starting $SERVICE_NAME container"
-            docker-compose up -d $SERVICE_NAME
+            # Start APISIX container
+            echo "Starting APISIX container..."
+            docker-compose up -d
 
+            # Wait for container to be healthy
+            echo "Waiting for APISIX to be ready..."
             sleep 10
 
+            # Verify APISIX Admin API is responsive
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
-              echo "✓ APISIX is responding"
+              echo "✓ APISIX Admin API is responding"
             else
-              echo "✗ APISIX health check failed"
-              docker logs $SERVICE_NAME | tail -20
+              echo "✗ APISIX Admin API failed"
+              docker logs gateway-apisix | tail -20
               exit 1
             fi
 
+            # Display summary
+            echo "=== Deployment Summary ==="
+            echo "Gateway: $(hostname -I | awk '{print $1}')"
+            echo "Services running:"
+            docker-compose ps
+            echo "Routes:"
             curl -s http://127.0.0.1:9080/apisix/admin/routes \
-               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
-
+              -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
             echo "✓ Deployment completed successfully"
 
       - name: Notify deployment status
         if: always()
         run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✓ Deployment succeeded"
+          echo "Job status: ${{ job.status }}"
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✓ APISIX configuration deployed successfully"
           else
             echo "✗ Deployment failed"
             exit 1
+          fi
