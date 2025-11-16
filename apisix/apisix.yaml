@@ -1,5 +1,5 @@
 #
-# Fixed APISIX configuration
+# APISIX Standalone Configuration
 #
 deployment:
   role: traditional
@@ -8,12 +8,15 @@ deployment:
 
 apisix:
   node_listen: 9080
-  enable_admin: false  # Disable admin API in standalone mode
+  enable_admin: false
+  enable_ipv6: false
 
 routes:
   - id: 1
     name: "Health Test"
-    uri: /health
+    uris:
+      - /health
+      - /test/health
     priority: 50
     upstream:
       type: roundrobin
@@ -23,13 +26,17 @@ routes:
 
   - id: 20
     name: "Keycloak Admin Console"
-    uri: /auth/*
+    uris:
+      - /auth
+      - /auth/*
     priority: 200
     upstream:
       type: roundrobin
       nodes:
         "keycloak-438091062981.us-central1.run.app:443": 1
       scheme: https
+      pass_host: rewrite
+      upstream_host: keycloak-438091062981.us-central1.run.app
     plugins:
       cors:
         allow_origins: "*"
@@ -41,10 +48,8 @@ routes:
         header_name: "X-Request-ID"
         include_in_response: true
       proxy-rewrite:
-        scheme: https
-        host: keycloak-438091062981.us-central1.run.app
         regex_uri:
-          - "^/auth/(.*)"
+          - "^/auth/?(.*)$"
           - "/admin/master/console/$1"
 
 #END
