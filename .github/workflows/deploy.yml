@@ -17,6 +17,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure deployment directory exists on gateway VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.GATEWAY_VM_IP }}
+          username: ${{ secrets.GATEWAY_VM_USER }}
+          key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
+          script: |
+            mkdir -p ~/apisix-blnk
+            chmod -R u+rwx ~/apisix-blnk
+
       - name: Copy APISIX config to gateway VM
         uses: appleboy/scp-action@master
         with:
@@ -26,6 +36,7 @@ jobs:
           source: "apisix/apisix.yaml,docker-compose.yml"
           target: "~/apisix-blnk"
           overwrite: true
+          tar_tmp_path: "/tmp"
 
       - name: Reload APISIX container
         uses: appleboy/ssh-action@master
@@ -38,18 +49,14 @@ jobs:
             echo "=== APISIX Configuration Deployment ==="
             echo "Timestamp: $(date)"
 
-            # Navigate to deployment directory
             cd ~/apisix-blnk
 
-            # Restart APISIX container
             echo "Reloading APISIX container..."
             docker-compose restart gateway-apisix
 
-            # Wait for container to be healthy
             echo "Waiting for APISIX to be ready..."
             sleep 5
 
-            # Verify APISIX is responding
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
               echo "✓ APISIX is responding"
@@ -59,7 +66,6 @@ jobs:
               exit 1
             fi
 
-            # Display summary
             echo "=== Deployment Summary ==="
             echo "Gateway: $(hostname -I | awk '{print $1}')"
             echo "Services running:"
