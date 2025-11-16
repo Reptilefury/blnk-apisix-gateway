@@ -2,6 +2,9 @@
 # Licensed to the Apache Software Foundation (ASF)
 #
 
+# Config in this file will be merged into config from config.yaml, conf/apisix.yaml
+# using the yq merge-arrays feature. So it can override default config.yaml config.
+
 node:
   listen: 0.0.0.0:9080
 
@@ -75,6 +78,7 @@ plugins:
 upstreams: []
 
 routes:
+  # Keycloak Admin Console
   - id: 20
     name: "Keycloak Admin Console"
     uris:
@@ -99,6 +103,23 @@ routes:
       proxy-rewrite:
         scheme: https
         host: keycloak-438091062981.us-central1.run.app
-        regex_uri: ["^/auth(/.*)?$", "/admin/master/console"]
+        regex_uri:
+          - "^/auth$"
+          - "/admin/master/console"
+          - "^/auth/(.*)"
+          - "/admin/master/console/$1"
 
-# Add any other routes, services, plugins, or upstreams below
+  # Test endpoint to verify routing
+  - id: 99
+    name: "Health Test Upstream"
+    uris:
+      - "/test/health"
+    priority: 100
+    upstream:
+      type: roundrobin
+      nodes:
+        "httpbin.org:80": 1
+      scheme: http
+    plugins:
+      proxy-rewrite:
+        uri: "/get"
