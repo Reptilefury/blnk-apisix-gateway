@@ -42,8 +42,16 @@ jobs:
             # Fix ownership so container can read files
             sudo chown -R $USER:$USER .
 
+            # Detect the service name from docker-compose.yml
+            SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
+            if [ -z "$SERVICE_NAME" ]; then
+              echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
+              exit 1
+            fi
+            echo "Detected APISIX service: $SERVICE_NAME"
+
             # Restart APISIX container
-            docker-compose restart gateway-apisix
+            docker-compose restart $SERVICE_NAME
 
             # Wait for container to initialize
             sleep 10
@@ -54,7 +62,7 @@ jobs:
               echo "✓ APISIX is responding"
             else
               echo "✗ APISIX health check failed"
-              docker logs gateway-apisix | tail -20
+              docker logs $SERVICE_NAME | tail -20
               exit 1
             fi
 
