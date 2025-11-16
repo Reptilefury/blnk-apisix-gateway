@@ -27,11 +27,9 @@ jobs:
             echo "=== APISIX Deployment ==="
             echo "Timestamp: $(date)"
 
-            # Ensure deployment folder exists
             mkdir -p ~/deploy-apisix
             cd ~/deploy-apisix
 
-            # Pull latest configuration from GitHub
             if [ ! -d .git ]; then
               git init
               git remote add origin https://github.com/${{ github.repository }}.git
@@ -39,10 +37,8 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Fix ownership so container can read files
             sudo chown -R $USER:$USER .
 
-            # Detect APISIX service name
             SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
             if [ -z "$SERVICE_NAME" ]; then
               echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
@@ -50,20 +46,16 @@ jobs:
             fi
             echo "Detected APISIX service: $SERVICE_NAME"
 
-            # Remove existing container if it exists
             if docker ps -a --format '{{.Names}}' | grep -q "^gateway-apisix\$"; then
               echo "Removing existing container gateway-apisix"
               docker rm -f gateway-apisix
             fi
 
-            # Start the container
             echo "Starting $SERVICE_NAME container"
             docker-compose up -d $SERVICE_NAME
 
-            # Wait for container to initialize
             sleep 10
 
-            # Health check
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
               echo "✓ APISIX is responding"
@@ -73,7 +65,6 @@ jobs:
               exit 1
             fi
 
-            # Show routes
             curl -s http://127.0.0.1:9080/apisix/admin/routes \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
 
@@ -82,7 +73,7 @@ jobs:
       - name: Notify deployment status
         if: always()
         run: |
-          if [ ${{ job.status }} == 'success' ]; then
+          if [ "${{ job.status }}" == "success" ]; then
             echo "✓ Deployment succeeded"
           else
             echo "✗ Deployment failed"
