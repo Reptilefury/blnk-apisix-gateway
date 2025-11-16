@@ -31,7 +31,7 @@ jobs:
             mkdir -p ~/deploy-apisix
             cd ~/deploy-apisix
 
-            # Pull latest configuration from GitHub directly
+            # Pull latest configuration from GitHub
             if [ ! -d .git ]; then
               git init
               git remote add origin https://github.com/${{ github.repository }}.git
@@ -42,7 +42,7 @@ jobs:
             # Fix ownership so container can read files
             sudo chown -R $USER:$USER .
 
-            # Detect the service name from docker-compose.yml
+            # Detect APISIX service name
             SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
             if [ -z "$SERVICE_NAME" ]; then
               echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
@@ -50,14 +50,15 @@ jobs:
             fi
             echo "Detected APISIX service: $SERVICE_NAME"
 
-            # Start or restart the container
-            if docker ps -a --format '{{.Names}}' | grep -q "^$SERVICE_NAME\$"; then
-              echo "Container exists → restarting $SERVICE_NAME"
-              docker-compose restart $SERVICE_NAME
-            else
-              echo "Container not found → starting $SERVICE_NAME"
-              docker-compose up -d $SERVICE_NAME
+            # Remove existing container if it exists
+            if docker ps -a --format '{{.Names}}' | grep -q "^gateway-apisix\$"; then
+              echo "Removing existing container gateway-apisix"
+              docker rm -f gateway-apisix
             fi
+
+            # Start the container
+            echo "Starting $SERVICE_NAME container"
+            docker-compose up -d $SERVICE_NAME
 
             # Wait for container to initialize
             sleep 10
