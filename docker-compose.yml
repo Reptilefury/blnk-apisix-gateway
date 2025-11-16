@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  apisix:
+    image: apache/apisix:3.7.0-debian
+    container_name: gateway-apisix
+    restart: always
+    ports:
+      - "9080:9080"      # HTTP gateway
+      - "9443:9443"      # HTTPS gateway
+      - "19080:9080"     # External HTTP gateway
+      - "19443:9443"     # External HTTPS gateway
+    environment:
+      APISIX_STAND_ALONE: "true"
+    volumes:
+      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+    networks:
+      - apisix-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9080/apisix/admin/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  apisix-dashboard:
+    image: apache/apisix-dashboard:3.7.0-latest
+    container_name: gateway-apisix-dashboard
+    restart: always
+    ports:
+      - "9000:9000"      # Dashboard UI
+      - "19000:9000"     # External Dashboard
+    environment:
+      APISIX_API_BASE_URL: "http://apisix:9080"
+      APISIX_API_KEY: "edd1c9f034335f136f87ad84b625c8f1"
+    depends_on:
+      - apisix
+    networks:
+      - apisix-net
+
+networks:
+  apisix-net:
+    driver: bridge

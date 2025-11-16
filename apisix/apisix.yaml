@@ -1,0 +1,107 @@
+#
+# Licensed to the Apache Software Foundation (ASF)
+#
+
+# Config in this file will be merged into config from config.yaml, conf/apisix.yaml
+# using the yq merge-arrays feature. So it can override default config.yaml config.
+
+node:
+  listen: 0.0.0.0:9080
+
+apisix:
+  enable_admin: true
+  admin_api_version: v1
+  allow_admin_access_domains:
+    - "127.0.0.1"
+    - "localhost"
+    - "apisix"
+  admin_api_mtls:
+    admin_ssl_cert: ""
+    admin_ssl_key: ""
+    admin_ssl_ca_cert: ""
+  http:
+    enable_ipv6: false
+
+plugins:
+  - api-breaker
+  - authz-casbin
+  - authz-keycloak
+  - aws-lambda
+  - azure-functions
+  - batch-requests
+  - cors
+  - echo
+  - fault-injection
+  - grpc-transcode
+  - gzip
+  - hmac-auth
+  - http-logger
+  - ip-restriction
+  - jwt-auth
+  - kafka-logger
+  - key-auth
+  - limit-conn
+  - limit-req
+  - node-red
+  - oauth2
+  - openid-connect
+  - prometheus
+  - proxy-cache
+  - proxy-mirror
+  - proxy-rewrite
+  - real-ip
+  - redirect
+  - referer-restriction
+  - request-id
+  - request-validation
+  - response-rewrite
+  - serverless-post-function
+  - serverless-pre-function
+  - session
+  - skywalking
+  - slp
+  - splunk-hec-logging
+  - standby
+  - tcp-logger
+  - traffic-split
+  - ua-restriction
+  - uri-blocker
+  - wolf-rbac
+  - zipkin
+  - server-info
+  - client-control
+  - consumer-restriction
+  - ext-plugin-pre-req
+  - ext-plugin-post-req
+  - inspect
+
+upstreams: []
+
+routes:
+  - id: 20
+    uri: "/auth/*"
+    name: "Keycloak Authentication"
+    priority: 200
+    upstream:
+      type: roundrobin
+      nodes:
+        keycloak-438091062981.us-central1.run.app:443: 1
+      scheme: https
+    plugins:
+      proxy-rewrite:
+        regex_uri: ["^/auth/(.*)", "/$1"]
+        headers:
+          add:
+            X-Forwarded-For: "$remote_addr"
+            X-Forwarded-Proto: "https"
+            X-Forwarded-Host: "$host"
+            X-Real-IP: "$remote_addr"
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+        allow_headers: "Content-Type,Authorization,X-API-Key"
+        expose_headers: "X-Request-ID"
+        max_age: 86400
+      request-id:
+        header_name: "X-Request-ID"
+        include_resp_header: true
