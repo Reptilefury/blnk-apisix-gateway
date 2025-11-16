@@ -13,10 +13,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout the latest code in Actions runner
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to gateway VM
+      # 2️⃣ Copy APISIX configuration and docker-compose files to the VM
+      - name: Copy APISIX config to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GATEWAY_VM_IP }}
+          username: ${{ secrets.GATEWAY_VM_USER }}
+          key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
+          source: "apisix/apisix.yaml,docker-compose.yml"
+          target: "~/apisix-blnk"
+
+      # 3️⃣ SSH to VM and restart APISIX
+      - name: Reload APISIX container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -27,30 +39,22 @@ jobs:
             echo "=== APISIX Configuration Deployment ==="
             echo "Timestamp: $(date)"
 
-            # Navigate to deployment directory
             cd ~/apisix-blnk
 
-            # Pull latest changes from GitHub
-            echo "Pulling latest configuration from GitHub..."
-            git pull origin main
-
             # Verify configuration file exists
-            if [ ! -f apisix/apisix.yaml ]; then
-              echo "ERROR: apisix/apisix.yaml not found!"
+            if [ ! -f apisix.yaml ]; then
+              echo "ERROR: apisix.yaml not found!"
               exit 1
             fi
-
             echo "Configuration file verified."
 
-            # Reload APISIX container to pick up new configuration
-            echo "Reloading APISIX container..."
+            # Restart container
             docker-compose restart gateway-apisix
 
-            # Wait for container to be healthy
             echo "Waiting for APISIX to be ready..."
             sleep 5
 
-            # Verify APISIX is responding
+            # Health check
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
               echo "✓ APISIX is responding"
@@ -60,9 +64,9 @@ jobs:
               exit 1
             fi
 
-            # Display summary
+            # Summary
             echo "=== Deployment Summary ==="
-            echo "Gateway: $(hostname -I | awk '{print $1}')"
+            echo "Gateway IP: $(hostname -I | awk '{print $1}')"
             echo "Services running:"
             docker-compose ps
             echo "Routes:"
@@ -70,6 +74,7 @@ jobs:
               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
             echo "✓ Deployment completed successfully"
 
+      # 4️⃣ Notify workflow outcome
       - name: Notify deployment status
         if: always()
         run: |
