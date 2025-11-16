@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Upload files to gateway VM
+      # Step 2: Ensure target folder exists and upload files
       - name: Upload APISIX files to gateway VM
         uses: appleboy/scp-action@master
         with:
@@ -31,7 +31,7 @@ jobs:
           target: "~/deploy-apisix"
           overwrite: true
           tar_exec: true
-          tar_tmp_path: "/home/runner"  # avoids /tmp permission issues
+          tar_tmp_path: "/home/runner"  # writable on GitHub runner
 
       # Step 3: Deploy and reload APISIX via SSH
       - name: Deploy and reload APISIX
@@ -45,10 +45,11 @@ jobs:
             echo "=== APISIX Configuration Deployment ==="
             echo "Timestamp: $(date)"
 
-            # Navigate to deployment directory
+            # Ensure deployment folder exists
+            mkdir -p ~/deploy-apisix
             cd ~/deploy-apisix
 
-            # Ensure files are owned correctly
+            # Fix ownership so Docker container can read files
             sudo chown -R $USER:$USER .
 
             # Restart APISIX container
@@ -56,7 +57,7 @@ jobs:
 
             # Wait for container to become healthy
             echo "Waiting for APISIX to be ready..."
-            sleep 5
+            sleep 10
 
             # Verify APISIX Admin API is responding
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
@@ -68,7 +69,7 @@ jobs:
               exit 1
             fi
 
-            # Show routes
+            # Show current routes
             echo "Current routes:"
             curl -s http://127.0.0.1:9080/apisix/admin/routes \
               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
