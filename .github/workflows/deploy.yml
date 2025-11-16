@@ -50,8 +50,14 @@ jobs:
             fi
             echo "Detected APISIX service: $SERVICE_NAME"
 
-            # Restart APISIX container
-            docker-compose restart $SERVICE_NAME
+            # Start or restart the container
+            if docker ps -a --format '{{.Names}}' | grep -q "^$SERVICE_NAME\$"; then
+              echo "Container exists → restarting $SERVICE_NAME"
+              docker-compose restart $SERVICE_NAME
+            else
+              echo "Container not found → starting $SERVICE_NAME"
+              docker-compose up -d $SERVICE_NAME
+            fi
 
             # Wait for container to initialize
             sleep 10
