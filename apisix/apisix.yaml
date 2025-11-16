@@ -1,5 +1,5 @@
 #
-# APISIX Standalone Configuration
+# APISIX Standalone Configuration with HTTPS Support
 #
 deployment:
   role: traditional
@@ -7,9 +7,24 @@ deployment:
     config_provider: yaml
 
 apisix:
-  node_listen: 9080
+  node_listen:
+    - 9080
+    - port: 9443
+      enable_http2: true
+  ssl:
+    enable: true
+    listen:
+      - port: 9443
+        enable_http2: true
   enable_admin: false
   enable_ipv6: false
+
+ssl:
+  - snis:
+      - "136.111.45.49"
+      - "*.136.111.45.49"
+    cert: /usr/local/apisix/conf/certs/fullchain.pem
+    key: /usr/local/apisix/conf/certs/privkey.pem
 
 routes:
   - id: 1
@@ -27,9 +42,9 @@ routes:
   - id: 20
     name: "Keycloak Proxy"
     uris:
-      - /
-      - /*
-    priority: 100
+      - /auth/*
+      - /realms/*
+    priority: 200
     upstream:
       type: roundrobin
       nodes:
@@ -41,8 +56,8 @@ routes:
       cors:
         allow_origins: "*"
         allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With"
-        expose_headers: "X-Request-ID"
+        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
+        expose_headers: "X-Request-ID,Set-Cookie"
         allow_credentials: true
         max_age: 86400
       request-id:
@@ -50,9 +65,11 @@ routes:
         include_in_response: true
       proxy-rewrite:
         headers:
-          set:
+          add:
+            X-Forwarded-For: "$remote_addr"
             X-Forwarded-Proto: "https"
-            X-Forwarded-Host: "136.111.45.49:19080"
-            X-Forwarded-Port: "19080"
+            X-Forwarded-Host: "136.111.45.49"
+            X-Forwarded-Port: "19443"
+            X-Real-IP: "$remote_addr"
 
 #END

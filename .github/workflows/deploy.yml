@@ -24,7 +24,7 @@ jobs:
           key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
           script: |
             set -e
-            echo "=== APISIX Deployment ==="
+            echo "=== APISIX Deployment with HTTPS ==="
             echo "Timestamp: $(date)"
 
             mkdir -p ~/deploy-apisix
@@ -39,6 +39,20 @@ jobs:
 
             sudo chown -R $USER:$USER .
 
+            # Generate self-signed SSL certificate if not exists
+            if [ ! -f certs/fullchain.pem ] || [ ! -f certs/privkey.pem ]; then
+              echo "Generating self-signed SSL certificate..."
+              mkdir -p certs
+              openssl req -x509 -newkey rsa:4096 \
+                -keyout certs/privkey.pem \
+                -out certs/fullchain.pem \
+                -days 365 -nodes \
+                -subj "/C=KE/ST=Nairobi/L=Nairobi/O=BLNK/CN=136.111.45.49"
+              echo "✓ Self-signed certificate generated"
+            else
+              echo "✓ Using existing SSL certificate"
+            fi
+
             SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
             if [ -z "$SERVICE_NAME" ]; then
               echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
@@ -51,24 +65,40 @@ jobs:
               docker rm -f gateway-apisix
             fi
 
-            echo "Starting $SERVICE_NAME container"
+            echo "Starting $SERVICE_NAME container with HTTPS support..."
             docker-compose up -d $SERVICE_NAME
 
             sleep 10
 
-            if curl -s http://127.0.0.1:9080/apisix/admin/version \
-               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
-              echo "✓ APISIX is responding"
+            if curl -s http://127.0.0.1:9080/health > /dev/null; then
+              echo "✓ APISIX HTTP endpoint is responding"
             else
               echo "✗ APISIX health check failed"
-              docker logs $SERVICE_NAME | tail -20
+              docker logs $SERVICE_NAME | tail -30
               exit 1
             fi
 
-            curl -s http://127.0.0.1:9080/apisix/admin/routes \
-               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
+            if curl -s -k https://127.0.0.1:9443/health > /dev/null; then
+              echo "✓ APISIX HTTPS endpoint is responding"
+            else
+              echo "⚠ APISIX HTTPS endpoint not yet responding (normal on first start)"
+            fi
 
+            echo ""
+            echo "=== Configured Routes ==="
+            curl -s http://127.0.0.1:9080/apisix/admin/routes \
+               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" 2>/dev/null | grep -o '"name":"[^"]*"' || echo "Routes will be loaded via config"
+
+            echo ""
             echo "✓ Deployment completed successfully"
+            echo ""
+            echo "=== Access Information ==="
+            echo "HTTP:  http://136.111.45.49:19080"
+            echo "HTTPS: https://136.111.45.49:19443 (self-signed cert)"
+            echo ""
+            echo "Keycloak URLs:"
+            echo "  HTTP:  http://136.111.45.49:19080/auth/admin/master/console/"
+            echo "  HTTPS: https://136.111.45.49:19443/auth/admin/master/console/"
 
       - name: Notify deployment status
         if: always()

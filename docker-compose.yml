@@ -6,18 +6,20 @@ services:
     container_name: gateway-apisix
     restart: always
     ports:
-      - "9080:9080"      # HTTP gateway
-      - "9443:9443"      # HTTPS gateway
+      - "9080:9080"      # HTTP gateway (internal)
+      - "9443:9443"      # HTTPS gateway (internal)
       - "19080:9080"     # External HTTP gateway
       - "19443:9443"     # External HTTPS gateway
     environment:
       APISIX_STAND_ALONE: "true"
     volumes:
       - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./certs/fullchain.pem:/usr/local/apisix/conf/certs/fullchain.pem:ro
+      - ./certs/privkey.pem:/usr/local/apisix/conf/certs/privkey.pem:ro
     networks:
       - apisix-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9080/apisix/admin/version"]
+      test: ["CMD", "curl", "-f", "http://localhost:9080/health"]
       interval: 10s
       timeout: 5s
       retries: 5
