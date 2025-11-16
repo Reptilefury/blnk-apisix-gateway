@@ -25,11 +25,9 @@ jobs:
           key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
           source: "apisix/apisix.yaml,docker-compose.yml"
           target: "~/apisix-blnk"
-          recursive: true
-          compress: true
-          rsync: true
+          overwrite: true
 
-      - name: Deploy on VM via SSH
+      - name: Reload APISIX container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -43,13 +41,13 @@ jobs:
             # Navigate to deployment directory
             cd ~/apisix-blnk
 
-            # Reload APISIX container to pick up new configuration
+            # Restart APISIX container
             echo "Reloading APISIX container..."
             docker-compose restart gateway-apisix
 
             # Wait for container to be healthy
             echo "Waiting for APISIX to be ready..."
-            sleep 10
+            sleep 5
 
             # Verify APISIX is responding
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
@@ -79,3 +77,4 @@ jobs:
           else
             echo "✗ Deployment failed"
             exit 1
+          fi
