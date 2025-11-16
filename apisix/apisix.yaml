@@ -79,13 +79,15 @@ upstreams: []
 
 routes:
   - id: 20
-    uri: "/auth/*"
-    name: "Keycloak Authentication"
+    name: "Keycloak Admin Console"
+    uris:
+      - "/auth"
+      - "/auth/*"
     priority: 200
     upstream:
       type: roundrobin
       nodes:
-        keycloak-438091062981.us-central1.run.app:443: 1
+        "keycloak-438091062981.us-central1.run.app:443": 1
       scheme: https
     plugins:
       cors:
@@ -97,3 +99,7 @@ routes:
       request-id:
         header_name: "X-Request-ID"
         include_resp_header: true
+      proxy-rewrite:
+        scheme: https
+        host: keycloak-438091062981.us-central1.run.app
+        uri: "/admin/master/console/$1"
