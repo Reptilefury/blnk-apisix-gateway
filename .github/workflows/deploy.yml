@@ -12,29 +12,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Step 2: Ensure target folder exists and upload files
-      - name: Upload APISIX files to gateway VM
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.GATEWAY_VM_IP }}
-          username: ${{ secrets.GATEWAY_VM_USER }}
-          key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
-          source: |
-            apisix/apisix.yaml
-            docker-compose.yml
-          target: "~/deploy-apisix"
-          overwrite: true
-          tar_exec: true
-          tar_tmp_path: "/home/runner"  # writable on GitHub runner
-
-      # Step 3: Deploy and reload APISIX via SSH
-      - name: Deploy and reload APISIX
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -42,24 +24,31 @@ jobs:
           key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
           script: |
             set -e
-            echo "=== APISIX Configuration Deployment ==="
+            echo "=== APISIX Deployment ==="
             echo "Timestamp: $(date)"
 
             # Ensure deployment folder exists
             mkdir -p ~/deploy-apisix
             cd ~/deploy-apisix
 
-            # Fix ownership so Docker container can read files
+            # Pull latest configuration from GitHub directly
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+            fi
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Fix ownership so container can read files
             sudo chown -R $USER:$USER .
 
             # Restart APISIX container
             docker-compose restart gateway-apisix
 
-            # Wait for container to become healthy
-            echo "Waiting for APISIX to be ready..."
+            # Wait for container to initialize
             sleep 10
 
-            # Verify APISIX Admin API is responding
+            # Health check
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
               echo "✓ APISIX is responding"
@@ -69,19 +58,17 @@ jobs:
               exit 1
             fi
 
-            # Show current routes
-            echo "Current routes:"
+            # Show routes
             curl -s http://127.0.0.1:9080/apisix/admin/routes \
-              -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
+               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
 
             echo "✓ Deployment completed successfully"
 
-      # Step 4: Notify deployment status
       - name: Notify deployment status
         if: always()
         run: |
           if [ ${{ job.status }} == 'success' ]; then
-            echo "✓ APISIX configuration deployed successfully"
+            echo "✓ Deployment succeeded"
           else
             echo "✗ Deployment failed"
             exit 1
