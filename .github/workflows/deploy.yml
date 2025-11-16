@@ -12,13 +12,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Copy files to gateway VM
-      - name: Deploy files to gateway VM
+      # Step 2: Upload files to gateway VM
+      - name: Upload APISIX files to gateway VM
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -30,9 +31,10 @@ jobs:
           target: "~/deploy-apisix"
           overwrite: true
           tar_exec: true
+          tar_tmp_path: "/home/runner"  # avoids /tmp permission issues
 
-      # Step 3: SSH into VM to restart APISIX and check status
-      - name: Restart APISIX and verify
+      # Step 3: Deploy and reload APISIX via SSH
+      - name: Deploy and reload APISIX
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.GATEWAY_VM_IP }}
@@ -40,18 +42,23 @@ jobs:
           key: ${{ secrets.GATEWAY_VM_SSH_KEY }}
           script: |
             set -e
-            echo "=== APISIX Deployment ==="
+            echo "=== APISIX Configuration Deployment ==="
             echo "Timestamp: $(date)"
 
+            # Navigate to deployment directory
             cd ~/deploy-apisix
 
-            echo "Restarting APISIX container..."
+            # Ensure files are owned correctly
+            sudo chown -R $USER:$USER .
+
+            # Restart APISIX container
             docker-compose restart gateway-apisix
 
-            echo "Waiting 5s for container to be ready..."
+            # Wait for container to become healthy
+            echo "Waiting for APISIX to be ready..."
             sleep 5
 
-            # Health check
+            # Verify APISIX Admin API is responding
             if curl -s http://127.0.0.1:9080/apisix/admin/version \
                -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" > /dev/null; then
               echo "✓ APISIX is responding"
@@ -61,13 +68,14 @@ jobs:
               exit 1
             fi
 
-            echo "Routes:"
+            # Show routes
+            echo "Current routes:"
             curl -s http://127.0.0.1:9080/apisix/admin/routes \
               -H "X-API-Key: edd1c9f034335f136f87ad84b625c8f1" | grep -o '"id":"[^"]*"' || echo "No routes found"
 
             echo "✓ Deployment completed successfully"
 
-      # Step 4: Notify pipeline success/failure
+      # Step 4: Notify deployment status
       - name: Notify deployment status
         if: always()
         run: |
