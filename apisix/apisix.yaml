@@ -51,10 +51,10 @@ routes:
     upstream:
       type: roundrobin
       nodes:
-        "blnk-server-438091062981.us-central1.run.app:443": 1
+        "blnk-server-fooaa3eima-uc.a.run.app:443": 1
       scheme: https
       pass_host: rewrite
-      upstream_host: "blnk-server-438091062981.us-central1.run.app"
+      upstream_host: "blnk-server-fooaa3eima-uc.a.run.app"
     plugins:
       cors:
         allow_origins: "*"
@@ -85,10 +85,10 @@ routes:
     upstream:
       type: roundrobin
       nodes:
-        "keycloak-438091062981.us-central1.run.app:443": 1
+        "keycloak-fooaa3eima-uc.a.run.app:443": 1
       scheme: https
       pass_host: rewrite
-      upstream_host: keycloak-438091062981.us-central1.run.app
+      upstream_host: keycloak-fooaa3eima-uc.a.run.app
     plugins:
       cors:
         allow_origins: "*"
@@ -103,7 +103,7 @@ routes:
             X-Forwarded-Proto: "http"
             X-Forwarded-Host: "136.111.45.49:19080"
             X-Forwarded-Port: "19080"
-            Host: "keycloak-438091062981.us-central1.run.app"
+            Host: "keycloak-fooaa3eima-uc.a.run.app"
       response-rewrite:
         body:
           - "s/https:\\/\\/keycloak-438091062981\\.us-central1\\.run\\.app/http:\\/\\/136.111.45.49:19080/g"
@@ -115,10 +115,10 @@ routes:
     upstream:
       type: roundrobin
       nodes:
-        "keycloak-438091062981.us-central1.run.app:443": 1
+        "keycloak-fooaa3eima-uc.a.run.app:443": 1
       scheme: https
       pass_host: rewrite
-      upstream_host: keycloak-438091062981.us-central1.run.app
+      upstream_host: keycloak-fooaa3eima-uc.a.run.app
     plugins:
       cors:
         allow_origins: "*"
@@ -136,7 +136,7 @@ routes:
             X-Forwarded-Proto: "http"
             X-Forwarded-Host: "136.111.45.49:19080"
             X-Forwarded-Port: "19080"
-            Host: "keycloak-438091062981.us-central1.run.app"
+            Host: "keycloak-fooaa3eima-uc.a.run.app"
       response-rewrite:
         body:
           - "s/https:\\/\\/keycloak-438091062981\\.us-central1\\.run\\.app/http:\\/\\/136.111.45.49:19080/g"
