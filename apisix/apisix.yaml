@@ -103,5 +103,8 @@ routes:
             X-Forwarded-Host: "136.111.45.49:19080"
             X-Forwarded-Port: "19080"
             Host: "keycloak-438091062981.us-central1.run.app"
+      response-rewrite:
+        body:
+          - "s/https:\\/\\/keycloak-438091062981\\.us-central1\\.run\\.app/http:\\/\\/136.111.45.49:19080/g"
 
 #END
