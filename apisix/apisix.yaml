@@ -104,9 +104,6 @@ routes:
             X-Forwarded-Host: "136.111.45.49:19080"
             X-Forwarded-Port: "19080"
             Host: "keycloak-fooaa3eima-uc.a.run.app"
-            Access-Control-Allow-Origin: "*"
-            Access-Control-Allow-Methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-            Access-Control-Allow-Headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
 
   - id: 20
     name: "Keycloak Proxy"
@@ -137,8 +134,5 @@ routes:
             X-Forwarded-Host: "136.111.45.49:19080"
             X-Forwarded-Port: "19080"
             Host: "keycloak-fooaa3eima-uc.a.run.app"
-            Access-Control-Allow-Origin: "*"
-            Access-Control-Allow-Methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-            Access-Control-Allow-Headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
 
 #END
