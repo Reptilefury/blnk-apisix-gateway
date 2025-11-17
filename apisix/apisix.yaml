@@ -74,6 +74,40 @@ routes:
             X-Forwarded-Port: "19080"
             Host: "blnk-server-438091062981.us-central1.run.app"
 
+  - id: 15
+    name: "Keycloak Admin"
+    uris:
+      - /admin/*
+      - /auth/*
+      - /realms/*
+      - /resources/*
+    priority: 300
+    upstream:
+      type: roundrobin
+      nodes:
+        "keycloak-438091062981.us-central1.run.app:443": 1
+      scheme: https
+      pass_host: rewrite
+      upstream_host: keycloak-438091062981.us-central1.run.app
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
+        expose_headers: "X-Request-ID,Set-Cookie"
+        allow_credentials: true
+        max_age: 86400
+      proxy-rewrite:
+        headers:
+          set:
+            X-Forwarded-Proto: "http"
+            X-Forwarded-Host: "136.111.45.49:19080"
+            X-Forwarded-Port: "19080"
+            Host: "keycloak-438091062981.us-central1.run.app"
+      response-rewrite:
+        body:
+          - "s/https:\\/\\/keycloak-438091062981\\.us-central1\\.run\\.app/http:\\/\\/136.111.45.49:19080/g"
+
   - id: 20
     name: "Keycloak Proxy"
     uri: /*
