@@ -74,6 +74,27 @@ routes:
             X-Forwarded-Port: "19080"
             Host: "blnk-server-438091062981.us-central1.run.app"
 
+  - id: 25
+    name: "Keycloak Direct URL Interceptor"
+    host: "keycloak-fooaa3eima-uc.a.run.app"
+    uri: /*
+    priority: 400
+    upstream:
+      type: roundrobin
+      nodes:
+        "keycloak-fooaa3eima-uc.a.run.app:443": 1
+      scheme: https
+      pass_host: rewrite
+      upstream_host: keycloak-fooaa3eima-uc.a.run.app
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
+        expose_headers: "X-Request-ID,Set-Cookie"
+        allow_credentials: true
+        max_age: 86400
+
   - id: 15
     name: "Keycloak Admin"
     uris:
