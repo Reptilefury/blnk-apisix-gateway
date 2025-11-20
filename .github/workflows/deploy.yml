@@ -53,20 +53,20 @@ jobs:
               echo "✓ Using existing SSL certificate"
             fi
 
-            SERVICE_NAME=$(docker-compose config --services | grep -i apisix | head -n1)
+            SERVICE_NAME=$(sudo docker-compose config --services | grep -i apisix | head -n1)
             if [ -z "$SERVICE_NAME" ]; then
               echo "ERROR: Could not detect APISIX service name in docker-compose.yml"
               exit 1
             fi
             echo "Detected APISIX service: $SERVICE_NAME"
 
-            if docker ps -a --format '{{.Names}}' | grep -q "^gateway-apisix\$"; then
+            if sudo docker ps -a --format '{{.Names}}' | grep -q "^gateway-apisix\$"; then
               echo "Removing existing container gateway-apisix"
-              docker rm -f gateway-apisix
+              sudo docker rm -f gateway-apisix
             fi
 
             echo "Starting $SERVICE_NAME container with HTTPS support..."
-            docker-compose up -d $SERVICE_NAME
+            sudo docker-compose up -d $SERVICE_NAME
 
             sleep 10
 
@@ -74,7 +74,7 @@ jobs:
               echo "✓ APISIX HTTP endpoint is responding"
             else
               echo "✗ APISIX health check failed"
-              docker logs $SERVICE_NAME | tail -30
+              sudo docker logs $SERVICE_NAME | tail -30
               exit 1
             fi
 
