@@ -224,3 +224,4 @@ Edit `docker-compose.yml` to modify:
 ## License
 
 This configuration is part of the Blnk infrastructure project.
+# Trigger deployment
