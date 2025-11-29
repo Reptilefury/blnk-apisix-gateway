@@ -64,7 +64,7 @@ routes:
         header_name: "X-Request-ID"
         include_in_response: true
       proxy-rewrite:
-        regex_uri: ["^/api/prediction-markets/(.*)", "/$1"]
+        regex_uri: ["^/(api/)?prediction-markets/(.*)", "/$2"]
         headers:
           set:
             X-Forwarded-Proto: "https"
