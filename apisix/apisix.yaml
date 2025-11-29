@@ -42,8 +42,7 @@ routes:
   - id: 12
     name: "Prediction Markets API"
     uris:
-      - /api/prediction-markets/*
-      - /prediction-markets/*
+      - /api/*
     priority: 400
     upstream:
       type: roundrobin
@@ -74,7 +73,6 @@ routes:
       request-enrichment:
         # Add authentication headers
       proxy-rewrite:
-        regex_uri: ["^/(api/)?prediction-markets/(.*)", "/$2"]
         headers:
           set:
             X-Forwarded-Proto: "https"
