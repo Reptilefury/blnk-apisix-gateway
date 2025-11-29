@@ -140,7 +140,7 @@ routes:
   - id: 20
     name: "Keycloak Proxy"
     uri: /*
-    priority: 100
+    priority: 50
     upstream:
       type: roundrobin
       nodes:
