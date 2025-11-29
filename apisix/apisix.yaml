@@ -44,7 +44,7 @@ routes:
     uris:
       - /api/prediction-markets/*
       - /prediction-markets/*
-    priority: 250
+    priority: 400
     upstream:
       type: roundrobin
       nodes:
@@ -56,13 +56,23 @@ routes:
       cors:
         allow_origins: "*"
         allow_methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie"
+        allow_headers: "Content-Type,Authorization,X-API-Key,X-Requested-With,Cookie,X-Keycloak-Token,X-Magic-User-ID,X-Magic-Issuer"
         expose_headers: "X-Request-ID,Set-Cookie,Content-Length"
         allow_credentials: true
         max_age: 86400
       request-id:
         header_name: "X-Request-ID"
         include_in_response: true
+      magic-did-auth:
+        # Magic DID token validation
+      keycloak-session:
+        keycloak_url: "https://keycloak-fooaa3eima-uc.a.run.app"
+        keycloak_realm: "master"
+        keycloak_client_id: "admin-cli"
+        redis_host: "34.63.22.56"
+        redis_port: 6379
+      request-enrichment:
+        # Add authentication headers
       proxy-rewrite:
         regex_uri: ["^/(api/)?prediction-markets/(.*)", "/$2"]
         headers:

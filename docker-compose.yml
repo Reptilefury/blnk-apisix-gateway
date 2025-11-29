@@ -16,6 +16,7 @@ services:
       - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
       - ./certs/fullchain.pem:/usr/local/apisix/conf/certs/fullchain.pem:ro
       - ./certs/privkey.pem:/usr/local/apisix/conf/certs/privkey.pem:ro
+      - ./plugins:/usr/local/apisix/apisix/plugins/custom:ro
     networks:
       - apisix-net
     healthcheck:
