@@ -21,7 +21,9 @@ apisix:
   enable_ipv6: false
 
 ssl:
-  - cert: /usr/local/apisix/conf/certs/fullchain.pem
+  - snis:
+      - "api.twilightparadox.com.twilightparadox.com"
+    cert: /usr/local/apisix/conf/certs/fullchain.pem
     key: /usr/local/apisix/conf/certs/privkey.pem
 
 routes:
