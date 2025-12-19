@@ -21,11 +21,6 @@ apisix:
   enable_ipv6: false
 
 ssl:
-  - snis:
-      - "136.111.45.49"
-      - "*.136.111.45.49"
-    cert: /usr/local/apisix/conf/certs/fullchain.pem
-    key: /usr/local/apisix/conf/certs/privkey.pem
   - cert: /usr/local/apisix/conf/certs/fullchain.pem
     key: /usr/local/apisix/conf/certs/privkey.pem
 
