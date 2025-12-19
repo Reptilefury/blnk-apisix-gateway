@@ -16,6 +16,7 @@ apisix:
     listen:
       - port: 9443
         enable_http2: true
+    ssl_protocols: "TLSv1.2 TLSv1.3"
   enable_admin: false
   enable_ipv6: false
 
